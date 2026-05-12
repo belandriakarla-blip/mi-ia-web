@@ -4,18 +4,21 @@ import numpy as np
 import cv2
 from streamlit_drawable_canvas import st_canvas
 
-# Configuración de la página
-st.title("Mi Clasificador de Números IA")
-st.write("Dibuja un número del 0 al 9 en el cuadro de abajo.")
+# Título de la web
+st.title("IA Clasificadora de Números")
 
-# Cargar el modelo que descargaste
+# Cargar el modelo
 @st.cache_resource
 def load_my_model():
     return tf.keras.models.load_model('modelo_mnist.keras')
 
-model = load_my_model()
+try:
+    model = load_my_model()
+    st.success("Modelo cargado correctamente")
+except Exception as e:
+    st.error(f"Error al cargar el modelo: {e}")
 
-# Crear el lienzo para dibujar
+# Lienzo para dibujar
 canvas_result = st_canvas(
     fill_color="rgba(255, 255, 255, 1)",
     stroke_width=20,
@@ -28,18 +31,13 @@ canvas_result = st_canvas(
 )
 
 if canvas_result.image_data is not None:
-    # Procesar la imagen dibujada
-    img = cv2.cvtColor(canvas_result.image_data.astype('uint8'), cv2.COLOR_RGBA2GRAY)
-    img = cv2.resize(img, (28, 28))
-    img = img / 255.0
-    img = np.expand_dims(img, axis=(0, -1))
-
     if st.button('Predecir'):
+        # Procesamiento básico
+        img = cv2.cvtColor(canvas_result.image_data.astype('uint8'), cv2.COLOR_RGBA2GRAY)
+        img = cv2.resize(img, (28, 28))
+        img = img / 255.0
+        img = np.expand_dims(img, axis=(0, -1))
+        
         prediction = model.predict(img)
-        confianza = np.max(prediction)
         clase = np.argmax(prediction)
-
-        if confianza < 0.80:
-            st.warning(f"No estoy muy segura. Confianza: {confianza:.2f}. ¡Intenta dibujar más claro!")
-        else:
-            st.success(f"¡Es un {clase}! (Confianza: {confianza:.2f})")
+        st.write(f"### ¡Es un {clase}!")
